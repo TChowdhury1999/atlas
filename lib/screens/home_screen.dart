@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:atlas/theme/app_theme.dart';
 import 'package:atlas/widgets/main_chart.dart';
+import 'package:atlas/widgets/metric_selector.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -15,8 +16,11 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Center(
-        child: MainChart()
+      body: Column(
+        children: [
+          Expanded(child: MainChart()),
+          MetricSelector(),
+        ]
       ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
