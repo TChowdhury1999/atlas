@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:atlas/theme/app_theme.dart';
+import 'package:atlas/widgets/main_chart.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -15,7 +16,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Center(
-        child: Text('Atlas', style: TextStyle(color: AppTheme.textPrimary))
+        child: MainChart()
       ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
