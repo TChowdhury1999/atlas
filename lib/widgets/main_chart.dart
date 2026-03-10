@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:atlas/theme/app_theme.dart';
+import 'package:atlas/models/data_entry.dart';
+import 'package:atlas/services/data_service.dart';
 
 class MainChart extends StatefulWidget {
   const MainChart({super.key});
@@ -11,28 +13,21 @@ class MainChart extends StatefulWidget {
 
 class _MainChartState extends State<MainChart> {
 
-  final List<FlSpot> weightSpots = [
-    FlSpot(0, 68.4),
-    FlSpot(1, 68.1),
-    FlSpot(2, 68.2),
-    FlSpot(3, 67.7),
-    FlSpot(4, 67.9),
-    FlSpot(5, 67.6),
-    FlSpot(6, 67.5),
-    FlSpot(7, 67.4),
-    FlSpot(8, 67.2),
-    FlSpot(9, 67.2),
-    FlSpot(10, 67.0),
-    FlSpot(11, 67.1),
-    FlSpot(12, 66.5),
-    FlSpot(13, 66.7),
-    FlSpot(14, 66.7),
-    FlSpot(15, 66.6),
-    FlSpot(16, 66.4),
-    FlSpot(17, 66.5),
-    FlSpot(18, 66.4),
-    FlSpot(19, 66.2),
-  ];
+  List<DataEntry> weightEntries = [];
+  
+
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    final entries = await DataService().loadData();
+    setState(() {
+      weightEntries = entries;
+    });
+  }
 
   List<FlSpot> getRollingAvg(List<FlSpot> spots, {int window = 7}) {
     List<FlSpot> result = [];
@@ -48,6 +43,14 @@ class _MainChartState extends State<MainChart> {
 
   @override
   Widget build(BuildContext context) {
+
+    if (weightEntries.isEmpty) return const Center(child: CircularProgressIndicator());
+
+    final startDate = DateTime.parse(weightEntries.first.date);
+    final List<FlSpot> weightSpots = weightEntries.map(
+        (e) => FlSpot(DateTime.parse(e.date).difference(startDate).inDays.toDouble(), e.value)
+      ).toList();
+      
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: LineChart(
