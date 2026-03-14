@@ -30,6 +30,10 @@ class _MainChartState extends State<MainChart> {
     });
   }
 
+  double _round(num number, int dp) {
+    return double.parse(number.toStringAsFixed(dp));
+  }
+
   List<FlSpot> getRollingAvg(List<FlSpot> spots, {int window = 7}) {
     List<FlSpot> result = [];
     for (int i = 0; i < spots.length; i++) {
@@ -38,7 +42,7 @@ class _MainChartState extends State<MainChart> {
       result.add(
         FlSpot(
           spots[i].x,
-          double.parse((filtered.fold(0.0, (sum, spot) => sum + spot.y) / filtered.length).toStringAsFixed(2))
+          _round(filtered.fold(0.0, (sum, spot) => sum + spot.y) / filtered.length, 2)
           )
         );
     }
@@ -77,8 +81,8 @@ class _MainChartState extends State<MainChart> {
           ],
           minX: 0,
           maxX: weightSpots.last.x + 14,
-          minY: weightSpots.map((s) => s.y).reduce(min) - 1,
-          maxY: weightSpots.map((s) => s.y).reduce(max) + 1,
+          minY: _round(weightSpots.map((s) => s.y).reduce(min) - 1, 0),
+          maxY: _round(weightSpots.map((s) => s.y).reduce(max) + 1, 0),
         ),
       ),
     );
