@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:atlas/theme/app_theme.dart';
+import 'package:atlas/services/data_service.dart';
 
 class MetricSelector extends StatefulWidget {
   const MetricSelector({super.key});
@@ -10,7 +11,31 @@ class MetricSelector extends StatefulWidget {
 
 class _MetricSelectorState extends State<MetricSelector> {
 
-  List<String> selectedMetrics = ["Weight", "Waist", "Bench", "Lat Pull", "Other"];
+  List<String> availableMetrics = [];
+  List<String> selectedMetrics = [];
+  //["Weight", "Waist", "Bench", "Lat Pull", "Other"];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadMetrics();
+  }
+
+  Future<void> _loadMetrics () async {
+    final metrics = await DataService().loadAvailableMetrics();
+    setState(() {
+      availableMetrics = metrics;
+      selectedMetrics = metrics.map( (m) => _formatText(m)).toList();
+    });
+  }
+
+  String _formatText(String text) {
+    List<String> parts = text.split(RegExp(r'[ _-]'));
+    String formattedText = parts.map(
+        (part) => part[0].toUpperCase() + part.substring(1)).join(" ");
+    return formattedText;
+  }
+
   Set<String> activeMetrics = {'Weight'};
 
   @override
@@ -27,7 +52,11 @@ class _MetricSelectorState extends State<MetricSelector> {
             selected: activeMetrics.contains(metric),
             onSelected: (val) {
               setState(() {
-                val ? activeMetrics.add(metric) : activeMetrics.remove(metric);
+                if (val) {
+                  activeMetrics.add(metric);
+                } else if (activeMetrics.length > 1) {
+                  activeMetrics.remove(metric);
+                }
               });
             },
             labelStyle: TextStyle(color: AppTheme.textPrimary),
