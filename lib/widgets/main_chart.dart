@@ -23,7 +23,9 @@ class _MainChartState extends State<MainChart> {
   }
 
   Future<void> _loadData() async {
+    print('loading data...');
     final entries = await DataService().loadData();
+    print('entries loaded: ${entries.length}');
     setState(() {
       weightEntries = entries;
     });

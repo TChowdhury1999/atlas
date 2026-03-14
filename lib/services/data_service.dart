@@ -15,7 +15,7 @@ class DataService {
   Future<List<DataEntry>> loadData() async {
     if (devMode) {
       final jsonStr = await rootBundle.loadString('assets/test_data.json');
-      final List<dynamic> jsonList = jsonDecode(jsonStr);
+      final List<dynamic> jsonList = jsonDecode(jsonStr)['weight'];
       return jsonList.map((e) => DataEntry.fromJson(e)).toList();
     }
 
@@ -26,16 +26,23 @@ class DataService {
         return [];
       }
       final jsonStr = await file.readAsString();
-      final List<dynamic> jsonList = jsonDecode(jsonStr);
+      final List<dynamic> jsonList = jsonDecode(jsonStr)['weight'];
       return jsonList.map((e) => DataEntry.fromJson(e)).toList();
     } catch(e) {
       return [];
     }
   }
 
-  Future<void> saveData(List<DataEntry> entries) async {
+  Future<void> saveData(String key, List<DataEntry> entries) async {
     final file = await _localFile;
-    final jsonStr = jsonEncode(entries.map((e) => e.toJson()).toList());
-    await file.writeAsString(jsonStr);
+
+    Map<String, dynamic> allData = {};
+    if (await file.exists()) {
+      allData = jsonDecode(await file.readAsString());
+    }
+
+    allData[key] = entries.map((e) => e.toJson()).toList();
+
+    await file.writeAsString(jsonEncode(allData));
   }
 }
