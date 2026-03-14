@@ -3,6 +3,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:atlas/theme/app_theme.dart';
 import 'package:atlas/models/data_entry.dart';
 import 'package:atlas/services/data_service.dart';
+import 'dart:math';
 
 class MainChart extends StatefulWidget {
   const MainChart({super.key});
@@ -23,9 +24,7 @@ class _MainChartState extends State<MainChart> {
   }
 
   Future<void> _loadData() async {
-    print('loading data...');
-    final entries = await DataService().loadData();
-    print('entries loaded: ${entries.length}');
+    final entries = await DataService().loadData("weight");
     setState(() {
       weightEntries = entries;
     });
@@ -34,11 +33,14 @@ class _MainChartState extends State<MainChart> {
   List<FlSpot> getRollingAvg(List<FlSpot> spots, {int window = 7}) {
     List<FlSpot> result = [];
     for (int i = 0; i < spots.length; i++) {
-      if (i < window) {
-        result.add(FlSpot(i.toDouble(), spots.sublist(0, i+1).fold(0.0, (sum, spot) => sum + spot.y) / (i+1))) ;
-      } else {
-        result.add(FlSpot(i.toDouble(), spots.sublist(i+1-window, i+1).fold(0.0, (sum, spot) => sum + spot.y) / window ));
-      } 
+      final filtered = spots.where((spot) => spot.x >= spots[i].x - window && spot.x <= spots[i].x).toList();
+
+      result.add(
+        FlSpot(
+          spots[i].x,
+          double.parse((filtered.fold(0.0, (sum, spot) => sum + spot.y) / filtered.length).toStringAsFixed(2))
+          )
+        );
     }
     return result;
   }
@@ -71,8 +73,12 @@ class _MainChartState extends State<MainChart> {
               color: AppTheme.primary,
               barWidth: 3,
               dotData: FlDotData(show: false),
-            )
+            ),
           ],
+          minX: 0,
+          maxX: weightSpots.last.x + 14,
+          minY: weightSpots.map((s) => s.y).reduce(min) - 1,
+          maxY: weightSpots.map((s) => s.y).reduce(max) + 1,
         ),
       ),
     );
