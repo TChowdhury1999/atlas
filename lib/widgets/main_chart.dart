@@ -20,6 +20,7 @@ class MainChart extends StatefulWidget {
 class _MainChartState extends State<MainChart> {
 
   Map<String, List<FlSpot>> allData = {};
+  Map<String, List<FlSpot>> normalisedData = {};
   DateTime? startDate;
 
   @override
@@ -48,6 +49,24 @@ class _MainChartState extends State<MainChart> {
     setState(() {
       allData = loaded;
     });
+    normalise();
+  }
+
+  void normalise() {
+    Map<String, List<FlSpot>> hold = {};
+    num first_value = 0;
+    for (final (i, metric) in widget.activeMetrics.indexed) {
+      if (i == 0) {
+        first_value = allData[metric]!.first.y;
+        hold[metric] = allData[metric]!;
+      } else {
+        num normalisation_value = allData[metric]!.first.y - first_value;
+        hold[metric] = allData[metric]!.map((spot) => FlSpot(spot.x, spot.y - normalisation_value)).toList();
+      }
+    }
+    setState(() {
+      normalisedData = hold;
+    });
   }
 
   List<FlSpot> getRollingAvg(List<FlSpot> spots, {int window = 7}) {
@@ -67,15 +86,15 @@ class _MainChartState extends State<MainChart> {
 
   List<LineChartBarData> getLineChartBarData() {
     List<LineChartBarData> hold = [];
-    for (final metric in widget.activeMetrics) {
+    for (final (i, metric) in widget.activeMetrics.indexed) {
       hold.add(
         LineChartBarData(
-          spots: allData[metric] ?? [],
+          spots: normalisedData[metric] ?? [],
           isCurved: true,
-          color: AppTheme.accent,
+          color: AppTheme.lineColors[i],
           barWidth: 2,
           dotData: FlDotData(show: true),
-        )
+        ),
       );
     }
     return hold;
@@ -85,13 +104,13 @@ class _MainChartState extends State<MainChart> {
   Widget build(BuildContext context) {
 
     final allSpots = widget.activeMetrics
-    .expand((metric) => allData[metric] ?? [])
+    .expand((metric) => normalisedData[metric] ?? [])
     .toList();
 
     if (allData.isEmpty) return const Center(child: CircularProgressIndicator());
       
     return Padding(
-      padding: const EdgeInsets.fromLTRB(8, 48, 16, 4),
+      padding: const EdgeInsets.fromLTRB(8, 48, 24, 4),
       child: LineChart(
         LineChartData(
           lineBarsData: getLineChartBarData(),
@@ -110,7 +129,7 @@ class _MainChartState extends State<MainChart> {
           titlesData: FlTitlesData(
             topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
             rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-            leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 30)),
+            leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 35)),
             bottomTitles: AxisTitles(
               sideTitles: SideTitles(
                 showTitles: true,
@@ -128,4 +147,3 @@ class _MainChartState extends State<MainChart> {
     );
   }
 }
-
