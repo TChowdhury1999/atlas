@@ -20,6 +20,7 @@ class MainChart extends StatefulWidget {
 class _MainChartState extends State<MainChart> {
 
   Map<String, List<FlSpot>> allData = {};
+  DateTime? startDate;
 
   @override
   void initState() {
@@ -37,7 +38,6 @@ class _MainChartState extends State<MainChart> {
 
   Future<void> _loadData() async {
     Map<String,  List<FlSpot>> loaded = {};
-    DateTime? startDate;
     for (final metric in widget.activeMetrics) {
       final metricData = await DataService().loadData(metric.toLowerCase());
       startDate ??= DateTime.parse(metricData.first.date);
@@ -91,14 +91,38 @@ class _MainChartState extends State<MainChart> {
     if (allData.isEmpty) return const Center(child: CircularProgressIndicator());
       
     return Padding(
-      padding: const EdgeInsets.all(16.0),
+      padding: const EdgeInsets.fromLTRB(8, 48, 16, 4),
       child: LineChart(
         LineChartData(
           lineBarsData: getLineChartBarData(),
-          minX: 0,
-          maxX: allSpots.map((s) => s.x).reduce((a, b) => a > b ? a : b) + 14,
+          minX: -5,
+          maxX: allSpots.map((s) => s.x).reduce((a, b) => a > b ? a : b) + 30,
           minY: round(allSpots.map((s) => s.y).reduce((a, b) => a < b ? a : b) - 1, 0),
           maxY: round(allSpots.map((s) => s.y).reduce((a, b) => a > b ? a : b) + 1, 0),
+          gridData: FlGridData(
+            show: true,
+            verticalInterval: 1,
+            checkToShowVerticalLine: (value) {
+              final date = startDate!.add(Duration(days: value.toInt()));
+              return round(date.day, 0) == 1;
+            },
+          ),
+          titlesData: FlTitlesData(
+            topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+            rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+            leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 30)),
+            bottomTitles: AxisTitles(
+              sideTitles: SideTitles(
+                showTitles: true,
+                interval: 1,
+                getTitlesWidget: (value, meta) {
+                  final date = startDate!.add(Duration(days: value.toInt()));
+                  if (date.day!=15) return const SizedBox.shrink();
+                  return Text(month_index_to_str(date.month));
+                }
+              )
+            )
+          )
         ),
       ),
     );

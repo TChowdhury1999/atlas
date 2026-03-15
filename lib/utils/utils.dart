@@ -8,3 +8,9 @@ String formatText(String text) {
 double round(num number, int dp) {
   return double.parse(number.toStringAsFixed(dp));
 }
+
+String month_index_to_str(int index) {
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
+                 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  return months[index-1];
+}
