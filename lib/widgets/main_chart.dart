@@ -141,6 +141,23 @@ class _MainChartState extends State<MainChart> {
                 }
               )
             )
+          ),
+          lineTouchData: LineTouchData(
+            touchTooltipData: LineTouchTooltipData(
+              getTooltipItems: (touchedSpots) {
+                return touchedSpots.map((spot) {
+                  final metric = widget.activeMetrics.elementAt(spot.barIndex);
+                  final rawSpot = allData[metric]?.firstWhere(
+                    (s) => s.x == spot.x,
+                    orElse: () => spot,
+                  );
+                  return LineTooltipItem(
+                    '${metric}: ${rawSpot?.y}',
+                    TextStyle(color: AppTheme.textPrimary)
+                  );
+                }).toList();
+              },
+            ),
           )
         ),
       ),
