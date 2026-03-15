@@ -12,14 +12,28 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 0;
+  Set<String> activeMetrics = {'Weight'};
+
+  void _onMetricToggled(String metric, bool val) {
+    setState(() {
+      final updated = Set<String>.from(activeMetrics);
+      if (val) {
+        updated.add(metric);
+      } else if (activeMetrics.length > 1) {
+        updated.remove(metric);
+      }
+      activeMetrics = updated;
+    });
+  }
+
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Column(
         children: [
-          Expanded(child: MainChart()),
-          MetricSelector(),
+          Expanded(child: MainChart(activeMetrics: activeMetrics)),
+          MetricSelector(activeMetrics: activeMetrics, onMetricToggled: _onMetricToggled),
         ]
       ),
       bottomNavigationBar: BottomNavigationBar(

@@ -1,9 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:atlas/theme/app_theme.dart';
 import 'package:atlas/services/data_service.dart';
+import 'package:atlas/utils/utils.dart';
 
 class MetricSelector extends StatefulWidget {
-  const MetricSelector({super.key});
+  final Set<String> activeMetrics;
+  final Function(String, bool) onMetricToggled;
+
+  const MetricSelector({
+    super.key,
+    required this.activeMetrics,
+    required this.onMetricToggled,
+  });
 
   @override
   State<MetricSelector> createState() => _MetricSelectorState();
@@ -25,18 +33,9 @@ class _MetricSelectorState extends State<MetricSelector> {
     final metrics = await DataService().loadAvailableMetrics();
     setState(() {
       availableMetrics = metrics;
-      selectedMetrics = metrics.map( (m) => _formatText(m)).toList();
+      selectedMetrics = metrics.map( (m) => formatText(m)).toList();
     });
   }
-
-  String _formatText(String text) {
-    List<String> parts = text.split(RegExp(r'[ _-]'));
-    String formattedText = parts.map(
-        (part) => part[0].toUpperCase() + part.substring(1)).join(" ");
-    return formattedText;
-  }
-
-  Set<String> activeMetrics = {'Weight'};
 
   @override
   Widget build(BuildContext context) {
@@ -49,15 +48,9 @@ class _MetricSelectorState extends State<MetricSelector> {
               metric,
               style: TextStyle(fontSize: 12),
               ),
-            selected: activeMetrics.contains(metric),
+            selected: widget.activeMetrics.contains(metric),
             onSelected: (val) {
-              setState(() {
-                if (val) {
-                  activeMetrics.add(metric);
-                } else if (activeMetrics.length > 1) {
-                  activeMetrics.remove(metric);
-                }
-              });
+              widget.onMetricToggled(metric, val);
             },
             labelStyle: TextStyle(color: AppTheme.textPrimary),
             selectedColor: AppTheme.surface.withAlpha(204),
@@ -65,7 +58,7 @@ class _MetricSelectorState extends State<MetricSelector> {
             labelPadding: EdgeInsets.zero,
             padding: EdgeInsets.symmetric(horizontal: 6),
             showCheckmark: false,
-            side: activeMetrics.contains(metric)
+            side: widget.activeMetrics.contains(metric)
                 ? BorderSide(color: AppTheme.accent)
                 : BorderSide.none,
             ),

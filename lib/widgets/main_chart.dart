@@ -4,9 +4,14 @@ import 'package:atlas/theme/app_theme.dart';
 import 'package:atlas/models/data_entry.dart';
 import 'package:atlas/services/data_service.dart';
 import 'dart:math';
+import 'package:atlas/utils/utils.dart';
 
 class MainChart extends StatefulWidget {
-  const MainChart({super.key});
+  final Set<String> activeMetrics;
+  const MainChart({
+    super.key,
+    required this.activeMetrics,
+  });
 
   @override
   State<MainChart> createState() => _MainChartState();  
@@ -14,8 +19,7 @@ class MainChart extends StatefulWidget {
 
 class _MainChartState extends State<MainChart> {
 
-  List<DataEntry> weightEntries = [];
-  
+  Map<String, List<FlSpot>> allData = {};
 
   @override
   void initState() {
@@ -23,15 +27,26 @@ class _MainChartState extends State<MainChart> {
     _loadData();
   }
 
-  Future<void> _loadData() async {
-    final entries = await DataService().loadData("weight");
-    setState(() {
-      weightEntries = entries;
-    });
+  @override
+  void didUpdateWidget(MainChart oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.activeMetrics != widget.activeMetrics) {
+      _loadData();
+    }
   }
 
-  double _round(num number, int dp) {
-    return double.parse(number.toStringAsFixed(dp));
+  Future<void> _loadData() async {
+    Map<String,  List<FlSpot>> loaded = {};
+    for (final metric in widget.activeMetrics) {
+      final metricData = await DataService().loadData(metric.toLowerCase());
+      final startDate = DateTime.parse(metricData.first.date);
+      loaded[metric] = metricData.map( 
+        (e) => FlSpot(DateTime.parse(e.date).difference(startDate).inDays.toDouble(), e.value)
+      ).toList();
+    }
+    setState(() {
+      allData = loaded;
+    });
   }
 
   List<FlSpot> getRollingAvg(List<FlSpot> spots, {int window = 7}) {
@@ -42,47 +57,47 @@ class _MainChartState extends State<MainChart> {
       result.add(
         FlSpot(
           spots[i].x,
-          _round(filtered.fold(0.0, (sum, spot) => sum + spot.y) / filtered.length, 2)
+          round(filtered.fold(0.0, (sum, spot) => sum + spot.y) / filtered.length, 2)
           )
         );
     }
     return result;
   }
 
+  List<LineChartBarData> getLineChartBarData() {
+    List<LineChartBarData> hold = [];
+    for (final metric in widget.activeMetrics) {
+      hold.add(
+        LineChartBarData(
+          spots: allData[metric] ?? [],
+          isCurved: true,
+          color: AppTheme.accent,
+          barWidth: 2,
+          dotData: FlDotData(show: true),
+        )
+      );
+    }
+    return hold;
+  }
+
   @override
   Widget build(BuildContext context) {
 
-    if (weightEntries.isEmpty) return const Center(child: CircularProgressIndicator());
+    final allSpots = widget.activeMetrics
+    .expand((metric) => allData[metric] ?? [])
+    .toList();
 
-    final startDate = DateTime.parse(weightEntries.first.date);
-    final List<FlSpot> weightSpots = weightEntries.map(
-        (e) => FlSpot(DateTime.parse(e.date).difference(startDate).inDays.toDouble(), e.value)
-      ).toList();
+    if (allData.isEmpty) return const Center(child: CircularProgressIndicator());
       
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: LineChart(
         LineChartData(
-          lineBarsData: [
-            LineChartBarData(
-              spots: weightSpots,
-              isCurved: true,
-              color: AppTheme.accent,
-              barWidth: 2,
-              dotData: FlDotData(show: true),
-            ),
-            LineChartBarData(
-              spots: getRollingAvg(weightSpots, window: 7),
-              isCurved: true,
-              color: AppTheme.primary,
-              barWidth: 3,
-              dotData: FlDotData(show: false),
-            ),
-          ],
+          lineBarsData: getLineChartBarData(),
           minX: 0,
-          maxX: weightSpots.last.x + 14,
-          minY: _round(weightSpots.map((s) => s.y).reduce(min) - 1, 0),
-          maxY: _round(weightSpots.map((s) => s.y).reduce(max) + 1, 0),
+          maxX: allSpots.map((s) => s.x).reduce((a, b) => a > b ? a : b) + 14,
+          minY: round(allSpots.map((s) => s.y).reduce((a, b) => a < b ? a : b) - 1, 0),
+          maxY: round(allSpots.map((s) => s.y).reduce((a, b) => a > b ? a : b) + 1, 0),
         ),
       ),
     );
