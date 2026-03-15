@@ -37,11 +37,12 @@ class _MainChartState extends State<MainChart> {
 
   Future<void> _loadData() async {
     Map<String,  List<FlSpot>> loaded = {};
+    DateTime? startDate;
     for (final metric in widget.activeMetrics) {
       final metricData = await DataService().loadData(metric.toLowerCase());
-      final startDate = DateTime.parse(metricData.first.date);
+      startDate ??= DateTime.parse(metricData.first.date);
       loaded[metric] = metricData.map( 
-        (e) => FlSpot(DateTime.parse(e.date).difference(startDate).inDays.toDouble(), e.value)
+        (e) => FlSpot(DateTime.parse(e.date).difference(startDate!).inDays.toDouble(), e.value)
       ).toList();
     }
     setState(() {
